@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码时钟</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    #date {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    .clock {
+      display: flex;
+      font-size: 5em;
+      margin-bottom: 20px;
+    }
+
+    .flip-card {
+      perspective: 1000px;
+      margin: 0 1px;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 60px;
+      height: 90px;
+      text-align: center;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #333;
+      color: white;
+      border-radius: 10px;
+    }
+
+    .flip-card-back {
+      transform: rotateX(180deg);
+    }
+
+    .flipping .flip-card-inner {
+      transform: rotateX(180deg);
+    }
+
+    #analog-clock {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      border: 3px solid black;
+      border-radius: 50%;
+      margin-top: 20px;
+    }
+
+    /* 添加刻度样式 */
+    .tick {
+      position: absolute;
+      width: 1px;
+      height: 15px;
+      background: black;
+      left: calc(50%);  /* 将刻度整体左移 1px */
+      top: 0;
+      transform-origin: 50% 150px;
+      margin-left: -0.5px;
+    }
+
+    .tick.hour {
+      height: 20px;
+      width: 3px;
+      background: #000;
+      transform-origin: 50% 150px;
+      left: calc(50%);  /* 整点刻度也需要同样左移 */
+      margin-left: -1.5px;
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: 50% 100%;
+      margin-left: -1px;
+    }
+
+    #hour-hand {
+      width: 6px;  /* 调整时针宽度与整点刻度相同 */
+      height: 35%;
+      background: black;
+      transform: rotate(90deg); /* 设置初始位置为 12 点钟方向 */
+      margin-left: -3px;  /* 调整时针居中偏移 */
+    }
+
+    #minute-hand {
+      width: 4px;
+      height: 45%;
+      background: black;
+      transform: rotate(90deg); /* 设置初始位置为 12 点钟方向 */
+    }
+
+    #second-hand {
+      width: 2px;
+      height: 50%;
+      background: red;
+      transform: rotate(90deg); /* 设置初始位置为 12 点钟方向 */
+      transition: transform 0.05s linear;
+    }
+
+    @media (max-width: 600px) {
+      #date {
+        font-size: 1.5em;
+      }
+
+      .clock {
+        font-size: 3em;
+      }
+
+      .flip-card-inner {
+        width: 40px;
+        height: 60px;
+      }
+
+      #analog-clock {
+        width: 200px;
+        height: 200px;
+      }
+
+      .tick {
+        transform-origin: 50% 100px;
+      }
+
+      .tick.hour {
+        transform-origin: 50% 100px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="date"></div>
+  <div class="clock">
+    <div class="flip-card">
+      <div class="flip-card-inner" id="hour-tens">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+    <div class="flip-card">
+      <div class="flip-card-inner" id="hour-units">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+    <div>:</div>
+    <div class="flip-card">
+      <div class="flip-card-inner" id="minute-tens">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+    <div class="flip-card">
+      <div class="flip-card-inner" id="minute-units">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+    <div>:</div>
+    <div class="flip-card">
+      <div class="flip-card-inner" id="second-tens">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+    <div class="flip-card">
+      <div class="flip-card-inner" id="second-units">
+        <div class="flip-card-front">0</div>
+        <div class="flip-card-back">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="analog-clock">
+    <div id="hour-hand" class="hand"></div>
+    <div id="minute-hand" class="hand"></div>
+    <div id="second-hand" class="hand"></div>
+  </div>
+
+  <script>
+    // 添加生成刻度的函数
+    function createTicks() {
+      const clock = document.getElementById('analog-clock');
+      // 创建60个刻度
+      for (let i = 0; i < 60; i++) {
+        const tick = document.createElement('div');
+        tick.className = 'tick';
+        // 每5个刻度为小时刻度
+        if (i % 5 === 0) {
+          tick.classList.add('hour');
+        }
+        // 计算刻度的旋转角度
+        const deg = i * 6;
+        // 不需要 translateX，因为已经通过 transform-origin 定位
+        tick.style.transform = `rotate(${deg}deg)`;
+        clock.appendChild(tick);
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const day = now.getDate();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      document.getElementById('date').innerText = `${year}年${month}月${day}日`;
+
+      flip(document.getElementById('hour-tens'), hours[0]);
+      flip(document.getElementById('hour-units'), hours[1]);
+      flip(document.getElementById('minute-tens'), minutes[0]);
+      flip(document.getElementById('minute-units'), minutes[1]);
+      flip(document.getElementById('second-tens'), seconds[0]);
+      flip(document.getElementById('second-units'), seconds[1]);
+
+      // 调整角度计算，使指针正确指向
+      const secondDeg = (seconds * 6);  // 每秒钟旋转 6 度
+      const minuteDeg = (minutes * 6) + (seconds * 0.1);  // 每分钟旋转 6 度，加上秒针的微调
+      const hourDeg = (hours % 12) * 30 + (minutes * 0.5);  // 每小时旋转 30 度，加上分钟的微调
+
+      document.getElementById('second-hand').style.transform = `rotate(${secondDeg}deg)`;
+      document.getElementById('minute-hand').style.transform = `rotate(${minuteDeg}deg)`;
+      document.getElementById('hour-hand').style.transform = `rotate(${hourDeg}deg)`;
+    }
+
+    function flip(card, newNumber) {
+      const front = card.querySelector('.flip-card-front');
+      const back = card.querySelector('.flip-card-back');
+      if (front.innerText !== newNumber) {
+        back.innerText = newNumber;
+        card.classList.add('flipping');
+        setTimeout(() => {
+          front.innerText = newNumber;
+          card.classList.remove('flipping');
+        }, 600);
+      }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+    createTicks();
+  </script>
+</body>
+
+</html>
